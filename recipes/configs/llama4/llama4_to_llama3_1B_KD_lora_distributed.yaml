@@ -1,0 +1,154 @@
+# Config for multi-device knowledge distillation from Llama4 Scout to Llama3.2 1B
+# using a teacher and student model.
+
+output_dir: /tmp/torchtune/llama4_to_llama3_1B/KD_lora_distributed
+
+# Model Arguments
+model:
+  _component_: torchtune.models.llama3_2.lora_llama3_2_1b
+  lora_attn_modules: ['q_proj', 'v_proj', 'output_proj']
+  apply_lora_to_mlp: True
+  apply_lora_to_output: False
+  lora_rank: 64
+  lora_alpha: 128
+  lora_dropout: 0.0
+
+teacher_model:
+  _component_: torchtune.models.llama4.llama4_scout_17b_16e
+
+# Tokenizer
+tokenizer:
+  _component_: torchtune.models.llama3.llama3_tokenizer
+  path: /tmp/Llama-3.2-1B-Instruct/original/tokenizer.model
+  max_seq_len: null
+
+checkpointer:
+  _component_: torchtune.training.FullModelHFCheckpointer
+  checkpoint_dir: /tmp/Llama-3.2-1B-Instruct/
+  checkpoint_files: [model.safetensors]
+  recipe_checkpoint: null
+  output_dir: ${output_dir}
+  model_type: LLAMA3
+resume_from_checkpoint: False
+save_adapter_weights_only: False
+
+# Teacher checkpoint
+teacher_checkpointer:
+  _component_: torchtune.training.FullModelHFCheckpointer
+  checkpoint_dir: /tmp/Llama-4-Scout-17B-16E-Instruct
+  checkpoint_files: [
+    model-00001-of-00050.safetensors,
+    model-00002-of-00050.safetensors,
+    model-00003-of-00050.safetensors,
+    model-00004-of-00050.safetensors,
+    model-00005-of-00050.safetensors,
+    model-00006-of-00050.safetensors,
+    model-00007-of-00050.safetensors,
+    model-00008-of-00050.safetensors,
+    model-00009-of-00050.safetensors,
+    model-00010-of-00050.safetensors,
+    model-00011-of-00050.safetensors,
+    model-00012-of-00050.safetensors,
+    model-00013-of-00050.safetensors,
+    model-00014-of-00050.safetensors,
+    model-00015-of-00050.safetensors,
+    model-00016-of-00050.safetensors,
+    model-00017-of-00050.safetensors,
+    model-00018-of-00050.safetensors,
+    model-00019-of-00050.safetensors,
+    model-00020-of-00050.safetensors,
+    model-00021-of-00050.safetensors,
+    model-00022-of-00050.safetensors,
+    model-00023-of-00050.safetensors,
+    model-00024-of-00050.safetensors,
+    model-00025-of-00050.safetensors,
+    model-00026-of-00050.safetensors,
+    model-00027-of-00050.safetensors,
+    model-00028-of-00050.safetensors,
+    model-00029-of-00050.safetensors,
+    model-00030-of-00050.safetensors,
+    model-00031-of-00050.safetensors,
+    model-00032-of-00050.safetensors,
+    model-00033-of-00050.safetensors,
+    model-00034-of-00050.safetensors,
+    model-00035-of-00050.safetensors,
+    model-00036-of-00050.safetensors,
+    model-00037-of-00050.safetensors,
+    model-00038-of-00050.safetensors,
+    model-00039-of-00050.safetensors,
+    model-00040-of-00050.safetensors,
+    model-00041-of-00050.safetensors,
+    model-00042-of-00050.safetensors,
+    model-00043-of-00050.safetensors,
+    model-00044-of-00050.safetensors,
+    model-00045-of-00050.safetensors,
+    model-00046-of-00050.safetensors,
+    model-00047-of-00050.safetensors,
+    model-00048-of-00050.safetensors,
+    model-00049-of-00050.safetensors,
+    model-00050-of-00050.safetensors
+  ]
+  recipe_checkpoint: null
+  output_dir: ${output_dir}
+  model_type: LLAMA4
+
+# Dataset and Sampler
+dataset:
+  _component_: torchtune.datasets.alpaca_cleaned_dataset
+  packed: False
+seed: null
+shuffle: True
+batch_size: 4
+
+# Optimizer and Scheduler
+optimizer:
+  _component_: torch.optim.AdamW
+  fused: True
+  weight_decay: 0.01
+  lr: 3e-4
+lr_scheduler:
+  _component_: torchtune.training.lr_schedulers.get_cosine_schedule_with_warmup
+  num_warmup_steps: 100
+
+loss:
+  _component_: torchtune.modules.loss.CEWithChunkedOutputLoss
+
+kd_loss:
+  _component_: torchtune.modules.loss.ForwardKLWithChunkedOutputLoss
+kd_ratio: 0.5
+
+# Training
+epochs: 1
+max_steps_per_epoch: null
+compile: False
+gradient_accumulation_steps: 8
+
+# Logging
+metric_logger:
+  _component_: torchtune.training.metric_logging.DiskLogger
+  log_dir: ${output_dir}/logs
+log_every_n_steps: 1
+log_peak_memory_stats: False
+log_level: INFO
+
+# Environment
+device: cuda
+dtype: bf16
+enable_activation_checkpointing: False
+enable_activation_offloading: False
+
+# Profiler
+profiler:
+  _component_: torchtune.training.setup_torch_profiler
+  enabled: False
+  output_dir: ${output_dir}/profiling_outputs
+  cpu: True
+  cuda: True
+  profile_memory: False
+  with_stack: False
+  record_shapes: True
+  with_flops: False
+  wait_steps: 5
+  warmup_steps: 5
+  active_steps: 2
+  num_cycles: 1
