@@ -21,3 +21,10 @@ tune download meta-llama/Llama-4-Scout-17B-16E-Instruct --hf-token <HF_TOKEN>
 
 ### Distill the llama4 model to a smaller model
 tune run --nproc_per_node 8 knowledge_distillation_distributed --config recipes/configs/llama4/llama4_to_llama3_1B_KD_lora_distributed
+
+### Evaluating the model
+git clone https://github.com/EleutherAI/lm-evaluation-harness.git
+cd lm-evaluation-harness/
+pip install -e .
+python -m lm_eval --model hf --model_args pretrained=/tmp/torchtune/llama4_scout_to_1B/KD_lora_distributed/epoch_0   --tasks truthfulqa_mc2,hellaswag,commonsense_qa   --device cuda
+
