@@ -28,11 +28,23 @@ cd lm-evaluation-harness/
 pip install -e .
 python -m lm_eval --model hf --model_args pretrained=/tmp/torchtune/llama4_scout_to_1B/KD_lora_distributed/epoch_0   --tasks truthfulqa_mc2,hellaswag,commonsense_qa   --device cuda
 
-### Issues
+### Learnings
 In this tutorial
 https://pytorch.org/torchtune/stable/tutorials/llama_kd_tutorial.html
 this command for distillation needs to be updated from:
+
 ```tune run knowledge_distillation_single_device --config llama3_2/knowledge_distillation_single_device```
+
 to:
+
 ```tune run knowledge_distillation_single_device --config llama3_2/8B_to_1B_KD_lora_single_device```
+
+Another learning is that we can not distill one family of models to another faily due to tokenizer changes.
+Otherwise it results in errors during the forward KL divergence loss due to logit size differences from student to teacher models.
+
+```
+[rank6]:   File "/home/ubuntu/torchtune/torchtune/modules/loss/kd_losses.py", line 52, in forward
+[rank6]:     prod_probs = torch.masked_fill(teacher_prob * student_logprob, inf_mask, 0)
+[rank6]: RuntimeError: The size of tensor a (202048) must match the size of tensor b (128256) at non-singleton dimension 1
+```
 
