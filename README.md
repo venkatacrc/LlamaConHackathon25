@@ -28,3 +28,11 @@ cd lm-evaluation-harness/
 pip install -e .
 python -m lm_eval --model hf --model_args pretrained=/tmp/torchtune/llama4_scout_to_1B/KD_lora_distributed/epoch_0   --tasks truthfulqa_mc2,hellaswag,commonsense_qa   --device cuda
 
+### Issues
+In this tutorial
+https://pytorch.org/torchtune/stable/tutorials/llama_kd_tutorial.html
+this command for distillation needs to be updated from:
+```tune run knowledge_distillation_single_device --config llama3_2/knowledge_distillation_single_device```
+to:
+```tune run knowledge_distillation_single_device --config llama3_2/8B_to_1B_KD_lora_single_device```
+
